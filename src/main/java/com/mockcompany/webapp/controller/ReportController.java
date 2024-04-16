@@ -1,6 +1,8 @@
 package com.mockcompany.webapp.controller;
 
 import com.mockcompany.webapp.api.SearchReportResponse;
+/* inject SearchService */
+import com.mockcompany.webapp.services.SearchService;
 import com.mockcompany.webapp.model.ProductItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,65 +34,109 @@ public class ReportController {
      * TODO: Declare the SearchService similar to EntityManager and add as a constructor argument
      */
 
+    /* Refactoring */
+    private final EntityManager entityManager;
+
+    @Autowired
+    private SearchService searchService;
+
     @Autowired
     public ReportController(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
-
     @GetMapping("/api/products/report")
     public SearchReportResponse runReport() {
-        /** TODO: This method needs to be rewritten to use the SearchService */
+        // This method is rewritten to use the SearchService
 
-        Map<String, Integer> hits = new HashMap<>();
         SearchReportResponse response = new SearchReportResponse();
-        response.setSearchTermHits(hits);
+        response.setSearchTermHits(new HashMap<>());
 
-        int count = this.entityManager.createQuery("SELECT item FROM ProductItem item").getResultList().size();
+        // Using SearchService to get count of all products
+        int count = searchService.getAllProductCount();
 
-        List<Number> matchingIds = new ArrayList<>();
-        matchingIds.addAll(
-                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%cool%'").getResultList()
-        );
-        matchingIds.addAll(
-                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
-        );
-        matchingIds.addAll(
-                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%Cool%'").getResultList()
-        );
-        matchingIds.addAll(
-                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
-        );
-        List<Number> counted = new ArrayList<>();
-        for (Number id: matchingIds) {
-            if (!counted.contains(id)) {
-                counted.add(id);
-            }
-        }
+        // Using SearchService to get count of products matching "Cool" term
+        int coolTermCount = searchService.getTermCount("Cool");
 
-        response.getSearchTermHits().put("Cool", counted.size());
+        // Using SearchService to get count of products matching "Kids" term
+        int kidsTermCount = searchService.getTermCount("Kids");
 
+        // Using SearchService to get count of products matching "Amazing" term
+        int amazingTermCount = searchService.getTermCount("Amazing");
 
+        // Using SearchService to get count of products matching "Perfect" term
+        int perfectTermCount = searchService.getTermCount("Perfect");
+
+        // Set counts in the response
         response.setProductCount(count);
-
-        List<ProductItem> allItems = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList();
-        int kidCount = 0;
-        int perfectCount = 0;
-        Pattern kidPattern = Pattern.compile("(.*)[kK][iI][dD][sS](.*)");
-        for (ProductItem item : allItems) {
-            if (kidPattern.matcher(item.getName()).matches() || kidPattern.matcher(item.getDescription()).matches()) {
-                kidCount += 1;
-            }
-            if (item.getName().toLowerCase().contains("perfect") || item.getDescription().toLowerCase().contains("perfect")) {
-                perfectCount += 1;
-            }
-        }
-        response.getSearchTermHits().put("Kids", kidCount);
-
-        response.getSearchTermHits().put("Amazing", entityManager.createQuery("SELECT item FROM ProductItem item where lower(concat(item.name, ' - ', item.description)) like '%amazing%'").getResultList().size());
-
-        hits.put("Perfect", perfectCount);
+        response.getSearchTermHits().put("Cool", coolTermCount);
+        response.getSearchTermHits().put("Kids", kidsTermCount);
+        response.getSearchTermHits().put("Amazing", amazingTermCount);
+        response.getSearchTermHits().put("Perfect", perfectTermCount);
 
         return response;
     }
+    /* end of Refactoring */
+
+//    @Autowired
+//    public ReportController(EntityManager entityManager) {
+//        this.entityManager = entityManager;
+//    }
+
+
+//    @GetMapping("/api/products/report")
+//    public SearchReportResponse runReport() {
+        /** TODO: This method needs to be rewritten to use the SearchService */
+
+//        Map<String, Integer> hits = new HashMap<>();
+//        SearchReportResponse response = new SearchReportResponse();
+//        response.setSearchTermHits(hits);
+
+//        int count = this.entityManager.createQuery("SELECT item FROM ProductItem item").getResultList().size();
+
+//        List<Number> matchingIds = new ArrayList<>();
+//        matchingIds.addAll(
+//                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%cool%'").getResultList()
+//        );
+//        matchingIds.addAll(
+//                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
+//        );
+//        matchingIds.addAll(
+//                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.name like '%Cool%'").getResultList()
+//        );
+//        matchingIds.addAll(
+//                this.entityManager.createQuery("SELECT item.id from ProductItem item where item.description like '%cool%'").getResultList()
+//        );
+//        List<Number> counted = new ArrayList<>();
+//        for (Number id: matchingIds) {
+//            if (!counted.contains(id)) {
+//                counted.add(id);
+//            }
+//        }
+
+//        response.getSearchTermHits().put("Cool", counted.size());
+
+
+//        response.setProductCount(count);
+
+//        List<ProductItem> allItems = entityManager.createQuery("SELECT item FROM ProductItem item").getResultList();
+//        int kidCount = 0;
+//        int perfectCount = 0;
+//        Pattern kidPattern = Pattern.compile("(.*)[kK][iI][dD][sS](.*)");
+//        for (ProductItem item : allItems) {
+//            if (kidPattern.matcher(item.getName()).matches() || kidPattern.matcher(item.getDescription()).matches()) {
+//                kidCount += 1;
+//            }
+//            if (item.getName().toLowerCase().contains("perfect") || item.getDescription().toLowerCase().contains("perfect")) {
+//                perfectCount += 1;
+//            }
+//        }
+//        response.getSearchTermHits().put("Kids", kidCount);
+
+//        response.getSearchTermHits().put("Amazing", entityManager.createQuery("SELECT item FROM ProductItem item where lower(concat(item.name, ' - ', item.description)) like '%amazing%'").getResultList().size());
+
+//        hits.put("Perfect", perfectCount);
+
+//        return response;
+//    }
 }
